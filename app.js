@@ -61,6 +61,22 @@ var BudgetController = (function() {
 			return newItem;
 		},
 
+		// Removal of an Item
+		deleteItem: function(type, id) {
+			var ids, index;
+
+			ids = data.allItems[type].map(function(current) {
+				return current.id;
+			});
+
+			index = ids.indexOf(id);
+
+			if (index !== -1) {
+				data.allItems[type].splice(index, 1);
+			}
+		},
+
+		// Calculating the Budget.
 		calculateBudget: function() {
 			// 1. Calculate total income and expenses.
 			calculateTotal('exp');
@@ -102,6 +118,7 @@ var UIController = (function() {
 		totalIncomeLabel: '.budget__income--value',
 		totalExpenseLabel: '.budget__expenses--value',
 		percentageLabel: '.budget__expenses--percentage',
+		container: '.container',
 	};
 
 	return {
@@ -117,6 +134,7 @@ var UIController = (function() {
 			}
 		},
 
+		// Adding a List Item
 		addListItem: function(obj, type) {
 			var element, HTML, newHTML;
 			// Create HTML string with placeholder text.
@@ -138,6 +156,13 @@ var UIController = (function() {
 			document.querySelector(element).insertAdjacentHTML('beforeend', newHTML);
 		},
 
+		// Removal of Element by ID
+		deleteListItem: function(selectorID) {
+			var element = document.getElementById(selectorID);
+			element.parentNode.removeChild(element);
+		},
+
+		// Clearing the Fields
 		clearFields: function() {
 			var fields, fieldsArray;
 
@@ -151,6 +176,7 @@ var UIController = (function() {
 			fieldsArray[0].focus();
 		},
 
+		// Displaying the correct values.
 		displayBudget: function(obj) {
 			document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
 			document.querySelector(DOMStrings.totalIncomeLabel).textContent = obj.totalIncome;
@@ -177,9 +203,12 @@ var Controller = (function(BudgetCtrl, UICtrl) {
 			if (13 === event.keyCode || 13 === event.which) {
 				ctrlAddItem();
 			}
-		})
+		});
+
+		document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
 	};
 
+  // Updating the Budget
 	var updateBudget = function() {
 		var budget;
 
@@ -191,6 +220,7 @@ var Controller = (function(BudgetCtrl, UICtrl) {
 		UICtrl.displayBudget(budget);
 	}
 
+  // Adding a Item
 	var ctrlAddItem = function() {
 		var input, newItem;
 
@@ -210,16 +240,41 @@ var Controller = (function(BudgetCtrl, UICtrl) {
 		}
 	}
 
+  // Deleting a Item
+	var ctrlDeleteItem = function(event) {
+		var itemID, splitID, type, ID;
+
+		itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+
+		if (itemID) {
+			// itemID will look like inc-0 or some sort
+			spltID = itemID.split('-');
+			type = spltID[0];
+			ID = parseFloat(spltID[1]);
+
+			// 1. Delete the item from the data structure.
+			BudgetController.deleteItem(type, ID);
+
+			// 2. Delete the item from the UI
+			UICtrl.deleteListItem(itemID);
+
+			// 3. Update and show the new budget.
+			updateBudget();
+		}
+	}
+
 	return {
 		init: function() {
 			console.log('Application has Started');
 
+			// Resetting everything
 			UICtrl.displayBudget({
 				budget: 0,
 				totalIncome: 0,
 				totalExpenses: 0,
 				percentage: -1,
 			});
+
 			setupEventListeners();
 		}
 	};
